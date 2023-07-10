@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- This is a very basic example -->
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0px;
+        padding: 30px
+      }
+    </style>
+    <title>Usage example for the javascript-sdk-boilerplate</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+    <!-- load file locally if possibleand override the external from github -->
+  </head>
+  <body onload="test()">
+    <script src="cdn_bundle.js"></script>
+
+    <script>
+      async function test(){
+       await fyno.default.init('WS_ID','API_KEY');
+      // fyno.default.identify("vinod")
+      await fyno.default.web_push.register_push("VAPID_PUBLIC_KEY")
+      }
+      function create(){
+        fyno.default.identify("DISTINCT_ID")
+      }
+  </script>
+    <h1>Hello World</h1>
+    <p>Have a look in your Fyno app, you should have a user created with webpush.</p>
+    <p>Find out more at <a href="https://github.com/monbro/javascript-sdk-boilerplate">github.com/monbro/javascript-sdk-boilerplate</a></p>
+    <button onclick="create()">Create User</button>
+  </body>
+</html>
