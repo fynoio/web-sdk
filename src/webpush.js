@@ -6,12 +6,9 @@ import { fyno_constants } from "./constants";
 var timer;
 class WebPush {
     constructor(instance) {
-        this.profile = new Profile(
-            instance,
-            fyno_constants.distinct_id,
-            "",
-            false
-        );
+        utils.get_config("fyno:distinct_id").then((res) => {
+            this.profile = new Profile(instance, res, "", false);
+        });
     }
 
     notification_permission() {
@@ -26,7 +23,7 @@ class WebPush {
 
     register_serviceworker = () => {
         return navigator.serviceWorker
-            .register(`/${config.service_worker_file}`)
+            .register(`./${config.service_worker_file}`)
             .then((registration) => {
                 this.subscribe_push(registration);
             })

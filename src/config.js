@@ -8,7 +8,7 @@ const config = {
     api_version: "v1",
     api_env: "live",
     event_endpoint: "/event",
-    user_endpoint: "/profiles",
+    user_endpoint: "/track/profile",
 };
 
 export default config;
