@@ -24,10 +24,9 @@ class Profile {
 
     identify = async (distinct_id, name) => {
         if (utils.is_empty(distinct_id)) return;
-        const old_user_id = await utils.get_config("fyno_user_profile");
-        fyno_constants.old_distinct_id = old_user_id;
-        fyno_constants.distinct_id = distinct_id;
-        utils.set_config("fyno_user_profile", distinct_id);
+        const old_user_id = await utils.get_config("fyno:distinct_id");
+        utils.set_config("fyno:last_distinct_id", old_user_id);
+        utils.set_config("fyno:distinct_id", distinct_id);
         if (!this.instance.identified) {
             await utils.trigger("create_profile", {
                 distinct_id,
@@ -46,6 +45,11 @@ class Profile {
                     );
                 } else {
                     await utils.trigger("merge_profile", {}, "PATCH");
+                    await utils.trigger(
+                        "update_profile",
+                        { distinct_id, name },
+                        "PUT"
+                    );
                 }
             }
             this.instance.identified = true;
@@ -123,7 +127,13 @@ class Profile {
         }
         this.webpush = subscription;
         this.update_channel({
-            webpush: subscription,
+            webpush: [
+                {
+                    token: subscription,
+                    integration_id: fyno_constants.integration,
+                    status: Notification.permission === "granted" ? 1 : 0,
+                },
+            ],
         });
     };
 
@@ -131,8 +141,8 @@ class Profile {
         return this.webpush;
     };
 
-    reset = () => {
-        utils.trigger(
+    reset = async () => {
+        await utils.trigger(
             "delete_channel",
             {
                 channel: {

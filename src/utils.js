@@ -1,29 +1,33 @@
 import config from "./config";
 import { fyno_constants } from "./constants";
 
-const _get_endpoint = (route) => {
-    let url = `${config.api_url}/${config.api_version}/${fyno_constants.wsid}/${config.api_env}/`;
+const _get_endpoint = async (route) => {
+    let url = `${config.api_url}/${config.api_version}/${fyno_constants.wsid}/track/${config.api_env}/`;
     switch (route) {
         case "trigger_event":
             url += `event`;
             break;
         case "create_profile":
-            url += `profiles`;
+            url += `profile`;
             break;
         case "merge_profile":
-            url += `profiles/${fyno_constants.old_distinct_id}/merge/${fyno_constants.distinct_id}`;
+            url += `profile/${await get_config(
+                "fyno:last_distinct_id"
+            )}/merge/${await get_config("fyno:distinct_id")}`;
             break;
         case "update_profile":
-            url += `profiles/${fyno_constants.distinct_id}`;
+            url += `profile/${await get_config("fyno:distinct_id")}`;
             break;
         case "update_channel":
-            url += `profiles/${fyno_constants.distinct_id}/channel`;
+            url += `profile/${await get_config("fyno:distinct_id")}/channel`;
             break;
         case "delete_channel":
-            url += `profiles/${fyno_constants.distinct_id}/channel/delete`;
+            url += `profile/${await get_config(
+                "fyno:distinct_id"
+            )}/channel/delete`;
             break;
         case "delete_profile":
-            url += `profiles/delete`;
+            url += `profile/delete`;
             break;
         default:
             url += `event`;
@@ -47,22 +51,25 @@ const is_empty = (obj) => {
     if (Array.isArray(obj)) {
         return obj.length === 0;
     } else if (obj instanceof Object) {
-        return Object.keys(obj).length === 0;
+        return Object.keys(obj.toJSON()).length === 0;
     } else {
         return [null, undefined, ""].includes(obj);
     }
 };
 
 const trigger = async (route, body, method = "POST") => {
-    const endpoint = _get_endpoint(route);
+    const endpoint = await _get_endpoint(route);
     const req_body = JSON.stringify(body);
-    const authorization = fyno_constants.api;
+    const verify_token = fyno_constants.api;
+    const integration = fyno_constants.integration;
+
     return fetch(endpoint, {
         method: method,
         body: req_body,
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authorization}`,
+            verify_token,
+            integration,
         },
     });
 };
@@ -116,11 +123,14 @@ function _get_cookie(name) {
     return null;
 }
 const set_config = async (key, value) => {
-    await _set_cookie(key, value);
+    // await _set_cookie(key, value);
+    localStorage.setItem(key, value);
 };
 
 const get_config = async (key) => {
-    return _get_cookie(key);
+    // return _get_cookie(key);
+    const value = await localStorage.getItem(key);
+    return value;
 };
 
 export default {
