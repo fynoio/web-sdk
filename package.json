@@ -1,0 +1,37 @@
+{
+  "name": "websdk",
+  "version": "1.0.10",
+  "description": "Fyno Web SDK",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/fyno-app/web-sdk.git"
+  },
+  "main": "dist/cjs_bundle.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rm -rf dist && webpack --env module_type=commonjs --env filename=cjs_bundle.js  && webpack --env module_type=window --env filename=cdn_bundle.js",
+    "publish_sdk": "npm run build && npm publish"
+  },
+  "types": "src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "fyno",
+    "javascript-sdk",
+    "web-sdk",
+    "notification",
+    "webpush"
+  ],
+  "author": "Sai Vinod K",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "babel-loader": "^9.1.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^5.80.0",
+    "webpack-cli": "^5.1.0"
+  }
+}
