@@ -1,5 +1,5 @@
 {
-  "name": "websdk",
+  "name": "@fyno/websdk",
   "version": "1.0.0",
   "description": "Fyno Web SDK",
   "repository": {

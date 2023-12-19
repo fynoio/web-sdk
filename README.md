@@ -14,6 +14,8 @@ npm install fyno-sdk
 Initialize the Fyno SDK with workspace id, signature, integration id. Before that create a HMAC signature for your integration by following the below process and it's suggested store it in you .env to use it in the website
 
 ### Creating Signature
+This will be a one time generation and you can store the value in you environment variables(`.env`) or in secret manager if any.
+
 ```javascript
 const Crypto = require("crypto");
 const signature = createHmac("sha256", wsid + access_token)
@@ -22,15 +24,15 @@ const signature = createHmac("sha256", wsid + access_token)
 ```
 ### Initialize SDK
 ```javascript
-const fyno = require('fyno-sdk');
+const fyno = require('@fyno/websdk');
 
 // Initialize Fyno SDK
-fyno.init(wsid, token, integration, env);
+fyno.init(wsid, signature, integration, env);
 ```
 
 * `wsid`: Workspace ID
-* `token`: API Signature
-* `integration`: Integration type
+* `signature`: HMAC Created in previous step
+* `integration`: Integration ID
 * `env` (optional): Environment (default is "live")
 
 ## Push Notification Registration
@@ -57,4 +59,11 @@ Reset the user profile when your user logs out.
 
 ```javascript
 fyno.reset();
+```
+
+## Registering Service Worker
+To register service worker and handle incoming messages from server, create a `serviceworker.js` file in your public folder and use following code snippet in created service worker.
+
+```javascript
+importScripts("https://cdn.jsdelivr.net/gh/fynoio/web-sdk@main/sw/serviceworker.js")
 ```
