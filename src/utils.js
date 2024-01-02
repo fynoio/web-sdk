@@ -35,9 +35,9 @@ const _get_endpoint = async (route) => {
     return url;
 };
 
-const uuidv5 = () => {
+const uuidv5 = async () => {
     var dt = new Date().getTime();
-    return "xxxxxxxx-xxxx-5xxx-yxxx-xxxxxxxxxxxx".replace(
+    const uuid = await "xxxxxxxx-xxxx-5xxx-yxxx-xxxxxxxxxxxx".replace(
         /[xy]/g,
         function (c) {
             const r = (dt + Math.random() * 16) % 16 | 0,
@@ -45,6 +45,7 @@ const uuidv5 = () => {
             return v.toString(16);
         }
     );
+    return uuid
 };
 
 const is_empty = (obj) => {
@@ -62,16 +63,20 @@ const trigger = async (route, body, method = "POST") => {
     const req_body = JSON.stringify(body);
     const verify_token = fyno_constants.api;
     const integration = fyno_constants.integration;
-
-    return fetch(endpoint, {
-        method: method,
-        body: req_body,
-        headers: {
-            "Content-Type": "application/json",
-            verify_token,
-            integration,
-        },
-    });
+    try {
+        const trigger_res = await fetch(endpoint, {
+            method: method,
+            body: req_body,
+            headers: {
+                "Content-Type": "application/json",
+                verify_token,
+                integration,
+            },
+        });
+        return trigger_res
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const regex = {
@@ -95,7 +100,7 @@ const urlB64ToUint8Array = (base64String) => {
 
 const get_timezone = async () => {
     const list = await (
-        await fetch("https://app.dev.fyno.io/api/app/users/timezone")
+        await fetch("https://app.fyno.io/api/app/users/timezone")
     ).json();
     return list.filter((obj) => {
         obj.timezone_name.includes(
@@ -124,7 +129,7 @@ function _get_cookie(name) {
 }
 const set_config = async (key, value) => {
     // await _set_cookie(key, value);
-    localStorage.setItem(key, value);
+    await localStorage.setItem(key, value);
 };
 
 const get_config = async (key) => {

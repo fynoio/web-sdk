@@ -23,7 +23,9 @@ class WebPush {
 
     register_serviceworker = () => {
         return navigator.serviceWorker
-            .register(`./${config.service_worker_file}`)
+            .register(config.service_worker_file, {
+                scope: config.sw_scope
+            })
             .then((registration) => {
                 this.subscribe_push(registration);
             })
@@ -45,16 +47,16 @@ class WebPush {
             });
     };
 
-    subscribe_with_delay() {
+    async subscribe_with_delay() {
         const now = new Date();
         const delay = now - requestTime;
         const has_delay = delay >= config.sw_delay;
         if (has_delay) {
-            this.register_serviceworker();
+            await this.register_serviceworker();
         } else {
             clearTimeout(timer);
-            timer = setTimeout(() => {
-                this.register_serviceworker();
+            timer = setTimeout(async () => {
+                await this.register_serviceworker();
             }, config.sw_delay - delay);
         }
     }
@@ -75,7 +77,7 @@ class WebPush {
                     applicationServerKey,
                     userVisibleOnly: true,
                 });
-                this.profile.set_webpush(subscription);
+                await this.profile.set_webpush(subscription);
             }
         }
     };
@@ -93,10 +95,10 @@ class WebPush {
             });
     }
 
-    register_push = (vapid) => {
+    register_push = async (vapid) => {
         config.vapid_key = vapid;
         if (this.is_push_available()) {
-            this.subscribe_with_delay();
+            await this.subscribe_with_delay();
         } else {
             console.log("Fyno: Browser not supported for web push");
         }
