@@ -78,7 +78,6 @@ function getBrowserInfo() {
 
 self.addEventListener("push", async function (e) {
     var notification = e.data.json();
-    e.notification.data.clicked = false;
     const details = getBrowserInfo();
 
     const pushObj = {
@@ -89,6 +88,7 @@ self.addEventListener("push", async function (e) {
             additional_data: notification.data.additional_data,
             image: notification.data.image,
             callback_url: notification.data.callback_url,
+            clicked: false
         },
         vibrate: notification.vibrate || [200, 100, 200],
         tag: notification.tag,
@@ -108,8 +108,6 @@ self.addEventListener("push", async function (e) {
             message: details,
         }),
     });
-    e.notification.data.clicked = true;
-    notification.close()
     e.waitUntil(
         self.registration.showNotification(notification.title || "", pushObj)
     );
@@ -117,7 +115,7 @@ self.addEventListener("push", async function (e) {
 
 self.addEventListener("notificationclose", async function (e) {
     var notification = e.notification;
-    if (notification.data.clicked) {
+    if (!notification.data.clicked) {
         fetch(notification.data.callback_url, {
             method: "POST",
             headers: {
@@ -170,5 +168,19 @@ self.addEventListener("notificationclick", async function (e) {
         });
         redirect_url = "/";
     }
+    e.notification.data.clicked = true;
+    notification.close()
     clients.openWindow(redirect_url);
+});
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+    // Send a message to the client when the push subscription changes
+    self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'pushSubscriptionChange',
+                newSubscription: event.newSubscription
+            });
+        });
+    });
 });
