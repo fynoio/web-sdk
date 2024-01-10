@@ -3,7 +3,7 @@ const package_data = require("../package.json");
 const config = {
     sdk_version: package_data.version,
     service_worker_file: "/serviceworker.js",
-    sw_delay: 10000,
+    sw_delay: 5000,
     api_url: "https://api.fyno.io",
     api_version: "v1",
     api_env: "live",

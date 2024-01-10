@@ -132,22 +132,21 @@ class Profile {
                 },
             ],
         });
+        await localStorage.setItem("fyno_push_subscription",JSON.stringify(subscription));
     };
 
     get_webpush = () => {
-        return this.webpush;
+        return WebPush.get_subscription();
     };
 
-    reset = async () => {
-        if(this.webpush){
+    reset = async (token) => {
+        if(token){
             await utils.trigger(
                 "delete_channel",
                 {
-                    channel: {
-                        webpush: [this.webpush],
-                    },
+                    webpush: [token],
                 },
-                "PATCH"
+                "POST"
             );
         } else {
             console.log("No webpush subscription available");

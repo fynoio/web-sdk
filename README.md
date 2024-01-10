@@ -65,5 +65,5 @@ fyno.reset();
 To register service worker and handle incoming messages from server, create a `serviceworker.js` file in your public folder and use following code snippet in created service worker.
 
 ```javascript
-importScripts("https://cdn.jsdelivr.net/npm/@fyno/websdk@1.1.3/sw/serviceworker.min.js")
+importScripts("https://cdn.jsdelivr.net/npm/@fyno/websdk@1.1.8/sw/serviceworker.min.js")
 ```

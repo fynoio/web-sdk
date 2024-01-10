@@ -172,3 +172,15 @@ self.addEventListener("notificationclick", async function (e) {
     notification.close()
     clients.openWindow(redirect_url);
 });
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+    // Send a message to the client when the push subscription changes
+    self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+            client.postMessage({
+                type: 'pushSubscriptionChange',
+                newSubscription: event.newSubscription
+            });
+        });
+    });
+});

@@ -78,7 +78,8 @@ class Fyno {
     }
 
     async reset() {
-        await this.profile.reset();
+        let token = await this.web_push.get_current_subscription();
+        await this.profile.reset(token);
         FynoInstance.identified = false;
         let fyno_uuid = await utils.uuidv5()
         this.profile = new Profile(FynoInstance, fyno_uuid);
