@@ -1,4 +1,4 @@
-# Fyno SDK Documentation for Techies
+# Fyno WebPush SDK Documentation
 
 The Fyno SDK is designed for technical users who are responsible for integrating and working with the Fyno web push service. This documentation provides a detailed overview of the SDK's functionalities and how to use them.
 
@@ -7,7 +7,7 @@ The Fyno SDK is designed for technical users who are responsible for integrating
 To use the Fyno SDK in your project, follow these steps:
 
 ```bash
-npm install fyno-sdk
+npm install @fyno/websdk
 ```
 
 ## Initialization
@@ -65,5 +65,5 @@ fyno.reset();
 To register service worker and handle incoming messages from server, create a `serviceworker.js` file in your public folder and use following code snippet in created service worker.
 
 ```javascript
-importScripts("https://cdn.jsdelivr.net/gh/fynoio/web-sdk@main/sw/serviceworker.js")
+importScripts("https://cdn.jsdelivr.net/npm/@fyno/websdk@1.1.8/sw/serviceworker.min.js")
 ```
