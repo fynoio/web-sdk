@@ -3,6 +3,7 @@ import config from "./config";
 import Profile from "./profile";
 import WebPush from "./webpush";
 import { fyno_constants } from "./constants";
+import customPopupConfig from "./customPopupConfig";
 
 export var requestTime;
 const FynoInstance = {};
@@ -85,6 +86,10 @@ class Fyno {
         this.profile = new Profile(FynoInstance, fyno_uuid);
         await this.profile.identify(fyno_uuid)
         await this.profile.set_webpush(await this.web_push.get_subscription())
+    }
+
+    setCustomPopupConfig(options) {
+        customPopupConfig.option = {...customPopupConfig.option, ...options}
     }
 
     async register_push(vapid) {
