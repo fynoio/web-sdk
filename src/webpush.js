@@ -3,6 +3,7 @@ import config from "./config";
 import Profile from "./profile";
 import { requestTime } from "./index";
 import { fyno_constants } from "./constants";
+import customPopupConfig from "./customPopupConfig";
 var timer;
 class WebPush {
     constructor(instance) {
@@ -51,6 +52,25 @@ class WebPush {
       }
 
     async showCustomPopup() {
+        const {
+            backgroundColorOverlay = 'rgba(0, 0, 0, 0.5)',
+            popupBackgroundColor = 'white',
+            popupPadding = '20px',
+            popupMarginTop = '50px',
+            popupBorderRadius = '8px',
+            popupTextAlign = 'center',
+            popupBoxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)',
+            popupMaxWidth = '500px',
+            popupWidth = '400px',
+            popupzIndex = "999",
+            closeIconText = '✕',
+            closeIconFontSize = '20px',
+            messageText = `${window.origin.split("://")[1].split("/")[0]} wants to send push notifications. Do you want to allow notifications?`,
+            buttonColor = '#3F51B5',
+            allowButtonText = 'Allow',
+            denyButtonText = 'Deny',
+            remindLaterText = 'Remind me later',
+        } = customPopupConfig.options;
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -58,28 +78,29 @@ class WebPush {
             overlay.style.left = '0';
             overlay.style.width = '100%';
             overlay.style.height = '100%';
-            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            overlay.style.backgroundColor = backgroundColorOverlay;
             overlay.style.display = 'flex';
             overlay.style.alignItems = 'flex-start';
             overlay.style.justifyContent = 'center';
+            overlay.style.zIndex = popupzIndex
     
             const popup = document.createElement('div');
-            popup.style.backgroundColor = 'white';
-            popup.style.padding = '20px';
-            popup.style.marginTop = '50px';
-            popup.style.borderRadius = '8px';
-            popup.style.textAlign = 'center';
-            popup.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-            popup.style.maxWidth = '500px';
-            popup.style.width = '400px';
+            popup.style.backgroundColor = popupBackgroundColor;
+            popup.style.padding = popupPadding;
+            popup.style.marginTop = popupMarginTop;
+            popup.style.borderRadius = popupBorderRadius;
+            popup.style.textAlign = popupTextAlign;
+            popup.style.boxShadow = popupBoxShadow;
+            popup.style.maxWidth = popupMaxWidth;
+            popup.style.width = popupWidth;
             popup.style.position = 'relative';
     
             const closeIcon = document.createElement('div');
-            closeIcon.textContent = '✖';
+            closeIcon.textContent = closeIconText;
             closeIcon.style.position = 'absolute';
             closeIcon.style.top = '10px';
             closeIcon.style.right = '10px';
-            closeIcon.style.fontSize = '20px';
+            closeIcon.style.fontSize = closeIconFontSize;
             closeIcon.style.cursor = 'pointer';
             closeIcon.addEventListener('click', () => {
                 overlay.remove();
@@ -87,11 +108,11 @@ class WebPush {
             });
     
             const message = document.createElement('p');
-            message.textContent = window.origin.split("://")[1].split("/")[0] + ' Wants to send push notificatios. Do you want to allow notifications?';
+            message.textContent = messageText;
     
             const allowButton = document.createElement('button');
-            allowButton.textContent = 'Allow';
-            allowButton.style.backgroundColor = '#3F51B5';
+            allowButton.textContent = allowButtonText;
+            allowButton.style.backgroundColor = buttonColor;
             allowButton.style.color = 'white';
             allowButton.style.border = 'none';
             allowButton.style.padding = '10px 20px';
@@ -103,8 +124,8 @@ class WebPush {
             });
     
             const denyButton = document.createElement('button');
-            denyButton.textContent = 'Deny';
-            denyButton.style.backgroundColor = '#3F51B5';
+            denyButton.textContent = denyButtonText;
+            denyButton.style.backgroundColor = buttonColor;
             denyButton.style.color = 'white';
             denyButton.style.border = 'none';
             denyButton.style.padding = '10px 20px';
@@ -116,12 +137,12 @@ class WebPush {
                 resolve('deny');
             });
     
-            const remindLaterText = document.createElement('div');
-            remindLaterText.textContent = 'Remind me later';
-            remindLaterText.style.marginTop = '10px';
-            remindLaterText.style.color = '#888';
-            remindLaterText.addEventListener('click', () => {
-                this.setCookie("remind_later", true, 12)
+            const remindLaterTextElement = document.createElement('div');
+            remindLaterTextElement.textContent = remindLaterText;
+            remindLaterTextElement.style.marginTop = '10px';
+            remindLaterTextElement.style.color = '#888';
+            remindLaterTextElement.addEventListener('click', () => {
+                this.setCookie("remind_later", true, 12);
                 overlay.remove();
                 resolve('close');
             });
@@ -130,7 +151,7 @@ class WebPush {
             popup.appendChild(message);
             popup.appendChild(allowButton);
             popup.appendChild(denyButton);
-            popup.appendChild(remindLaterText);
+            popup.appendChild(remindLaterTextElement);
     
             overlay.appendChild(popup);
             document.body.appendChild(overlay);
