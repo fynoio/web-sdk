@@ -89,7 +89,7 @@ class Fyno {
     }
 
     setCustomPopupConfig(options) {
-        customPopupConfig.option = {...customPopupConfig.option, ...options}
+        customPopupConfig.options = {...customPopupConfig.options, ...options}
     }
 
     async register_push(vapid) {
