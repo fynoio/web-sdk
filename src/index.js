@@ -1,4 +1,5 @@
 import utils from "./utils";
+import {openDB} from 'idb';
 import config from "./config";
 import Profile from "./profile";
 import WebPush from "./webpush";
@@ -27,16 +28,19 @@ class Fyno {
     //     }
     //     this.web_push = new WebPush(FynoInstance);
     // }
+    
     async init(wsid, token, integration, env = "live", options = {}) {
+
         return new Promise(async (resolve, reject) => {
             try {
+                await this.createStoreInDB();
                 requestTime = new Date();
                 fyno_constants.wsid = wsid;
                 fyno_constants.api = token;
                 fyno_constants.integration = integration;
                 config.api_env = env;
     
-                const profile_config = await utils.get_config("fyno:distinct_id");
+                const profile_config = await utils.get_config(FynoInstance.indexDb, "fyno:distinct_id");
                 if (utils.is_empty(profile_config)) {
                     const fyno_uuid = await utils.uuidv5();
                     FynoInstance.identified = false;
@@ -57,7 +61,7 @@ class Fyno {
                     config.sw_delay = options.sw_delay
                 }
 
-                this.web_push = new WebPush(FynoInstance);
+                this.web_push = await new WebPush(FynoInstance);
                 
                 resolve(this.profile.distinct_id);
             } catch (error) {
@@ -66,8 +70,19 @@ class Fyno {
         });
     }
 
+    async createStoreInDB() {
+        FynoInstance.indexDb = await openDB('fyno-websdk', 1, {
+            upgrade(db) {
+              if (!db.objectStoreNames.contains('config')) {
+                db.createObjectStore('config');
+              }
+            },
+          });
+      }
+      
+
     async identify(distinct_id, name = "") {
-        const current_profile = await utils.get_config("fyno:distinct_id");
+        const current_profile = await utils.get_config(FynoInstance.indexDb, "fyno:distinct_id");
         if (current_profile !== distinct_id) {
             FynoInstance.identified = true;
             this.profile = await new Profile(FynoInstance, distinct_id);
