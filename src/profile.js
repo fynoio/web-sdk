@@ -9,6 +9,7 @@ class Profile {
 
     update_channel = async (channel_obj) => {
         return await utils.trigger(
+            this.instance,
             "update_channel",
             {
                 channel: channel_obj,
@@ -18,13 +19,14 @@ class Profile {
     };
 
     identify = async (distinct_id, name) => {
+        if(!name) name = undefined;
         if (utils.is_empty(distinct_id)) return;
         let res;
-        const old_user_id = await utils.get_config("fyno:distinct_id");
-        utils.set_config("fyno:last_distinct_id", old_user_id);
-        utils.set_config("fyno:distinct_id", distinct_id);
+        const old_user_id = await utils.get_config(this.instance.indexDb, "fyno:distinct_id");
+        utils.set_config(this.instance.indexDb, "fyno:last_distinct_id", old_user_id);
+        utils.set_config(this.instance.indexDb, "fyno:distinct_id", distinct_id);
         if (!this.instance.identified) {
-            res = await utils.trigger("create_profile", {
+            res = await utils.trigger(this.instance, "create_profile", {
                 distinct_id,
                 name,
             });
@@ -32,6 +34,7 @@ class Profile {
             if (old_user_id != distinct_id) {
                 if (utils.is_empty(old_user_id)) {
                     res = await utils.trigger(
+                        this.instance,
                         "update_profile",
                         {
                             distinct_id,
@@ -40,8 +43,9 @@ class Profile {
                         "PUT"
                     );
                 } else {
-                    res = await utils.trigger("merge_profile", {}, "PATCH");
+                    res = await utils.trigger(this.instance,"merge_profile", {}, "PATCH");
                     await utils.trigger(
+                        this.instance,
                         "update_profile",
                         { distinct_id, name },
                         "PUT"
@@ -132,7 +136,7 @@ class Profile {
                 },
             ],
         });
-        await localStorage.setItem("fyno_push_subscription",JSON.stringify(subscription));
+        await utils.set_config(this.instance.indexDb, "fyno_push_subscription",JSON.stringify(subscription));
     };
 
     get_webpush = () => {
@@ -142,6 +146,7 @@ class Profile {
     reset = async (token) => {
         if(token){
             await utils.trigger(
+                this.instance,
                 "delete_channel",
                 {
                     webpush: [token],

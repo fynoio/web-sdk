@@ -1,7 +1,7 @@
 import config from "./config";
 import { fyno_constants } from "./constants";
 
-const _get_endpoint = async (route) => {
+const _get_endpoint = async (instance, route) => {
     let url = `${config.api_url}/${config.api_version}/${fyno_constants.wsid}/track/${config.api_env}/`;
     switch (route) {
         case "trigger_event":
@@ -11,18 +11,18 @@ const _get_endpoint = async (route) => {
             url += `profile`;
             break;
         case "merge_profile":
-            url += `profile/${await get_config(
+            url += `profile/${await get_config(instance.indexDb,
                 "fyno:last_distinct_id"
-            )}/merge/${await get_config("fyno:distinct_id")}`;
+            )}/merge/${await get_config(instance.indexDb,"fyno:distinct_id")}`;
             break;
         case "update_profile":
-            url += `profile/${await get_config("fyno:distinct_id")}`;
+            url += `profile/${await get_config(instance.indexDb,"fyno:distinct_id")}`;
             break;
         case "update_channel":
-            url += `profile/${await get_config("fyno:distinct_id")}/channel`;
+            url += `profile/${await get_config(instance.indexDb,"fyno:distinct_id")}/channel`;
             break;
         case "delete_channel":
-            url += `profile/${await get_config(
+            url += `profile/${await get_config(instance.indexDb,
                 "fyno:distinct_id"
             )}/channel/delete`;
             break;
@@ -58,8 +58,8 @@ const is_empty = (obj) => {
     }
 };
 
-const trigger = async (route, body, method = "POST") => {
-    const endpoint = await _get_endpoint(route);
+const trigger = async (instance, route, body, method = "POST") => {
+    const endpoint = await _get_endpoint(instance, route);
     const req_body = JSON.stringify(body);
     const verify_token = fyno_constants.api;
     const integration = fyno_constants.integration;
@@ -127,15 +127,20 @@ function _get_cookie(name) {
     }
     return null;
 }
-const set_config = async (key, value) => {
-    // await _set_cookie(key, value);
-    await localStorage.setItem(key, value);
+
+const set_config = async (db, key, value) => {
+    const tx = db.transaction('config', 'readwrite');
+    const store = tx.objectStore('config');
+    await store.put({ field: value }, key);
+    await tx.complete;
 };
 
-const get_config = async (key) => {
-    // return _get_cookie(key);
-    const value = await localStorage.getItem(key);
-    return value;
+const get_config = async (db, key) => {
+    const tx = db.transaction('config', 'readonly');
+    const store = tx.objectStore('config');
+    const value = await store.get(key);
+    await tx.complete;
+    return value ? value.field : undefined;
 };
 
 export default {
