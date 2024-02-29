@@ -7,7 +7,8 @@ import customPopupConfig from "./customPopupConfig";
 var timer;
 class WebPush {
     constructor(instance) {
-        utils.get_config("fyno:distinct_id").then((res) => {
+        this.instance = instance;
+        utils.get_config(instance.indexDb, "fyno:distinct_id").then((res) => {
             this.profile = new Profile(instance, res, "", false);
         });
     }
@@ -118,7 +119,8 @@ class WebPush {
             allowButton.style.padding = '10px 20px';
             allowButton.style.marginRight = '10px';
             allowButton.style.cursor = 'pointer';
-            allowButton.addEventListener('click', () => {
+            allowButton.addEventListener('click', async () => {
+                await utils.set_config(this.instance.indexDb, "push_status", "allowed")
                 overlay.remove();
                 resolve('allow');
             });
@@ -130,8 +132,8 @@ class WebPush {
             denyButton.style.border = 'none';
             denyButton.style.padding = '10px 20px';
             denyButton.style.cursor = 'pointer';
-            denyButton.addEventListener('click', () => {
-                localStorage.setItem("push_status", "denied")
+            denyButton.addEventListener('click', async () => {
+                await utils.set_config(this.instance.indexDb, "push_status", "denied")
                 this.deleteCookie("remind_later");
                 overlay.remove();
                 resolve('deny');
@@ -141,7 +143,8 @@ class WebPush {
             remindLaterTextElement.textContent = remindLaterText;
             remindLaterTextElement.style.marginTop = '10px';
             remindLaterTextElement.style.color = '#888';
-            remindLaterTextElement.addEventListener('click', () => {
+            remindLaterTextElement.addEventListener('click', async () => {
+                await utils.set_config(this.instance.indexDb, "push_status", "remind_later")
                 this.setCookie("remind_later", true, 12);
                 overlay.remove();
                 resolve('close');
@@ -204,7 +207,7 @@ class WebPush {
                 console.log('Notification Permission granted');
                 const registration = await navigator.serviceWorker.ready;                
                 const existingSubscription = await registration.pushManager.getSubscription();                
-                const sub = await localStorage.getItem("fyno_push_subscription");                
+                const sub = await utils.get_config(this.instance.indexDb, "fyno_push_subscription");                
                 // If there is no existing subscription or stored subscription,
                 // or if the stored subscription is different, subscribe again
                 if (JSON.stringify(sub) !== existingSubscription) {
@@ -221,7 +224,7 @@ class WebPush {
             } else {
             // Permission is 'default' (may be later), show custom popup    
             // If the user allows, proceed with service worker registration
-            if(await localStorage.getItem("push_status") === "denied")
+            if(await utils.get_config(this.instance.indexDb, "push_status") === "denied")
                 return
             if(this.getCookie("remind_later")) {
                 return
@@ -306,9 +309,14 @@ class WebPush {
     };
 
     allow_push = async () => {
-        await localStorage.setItem("push_status", "allowed");
+        await utils.set_config(this.instance.indexDb, "push_status", "allowed");
         this.deleteCookie("remind_later")
-        await this.subscribe_push()
+        navigator.serviceWorker.ready
+        .then(async (reg) => {
+            await this.subscribe_push(reg)
+        }).catch((err) => {
+            console.log("Fyno: Push registration failed");
+        });
     }
 }
 

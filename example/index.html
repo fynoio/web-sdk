@@ -27,10 +27,20 @@
       function create(){
         fyno.default.identify("DISTINCT_ID")
       }
+      function reset(){
+        fyno.default.reset()
+      }
+      function allow_push() {
+        fyno.default.web_push.allow_push();
+      }
   </script>
     <h1>Hello World</h1>
     <p>Have a look in your Fyno app, you should have a user created with webpush.</p>
     <p>Find out more at <a href="https://github.com/monbro/javascript-sdk-boilerplate">github.com/monbro/javascript-sdk-boilerplate</a></p>
+    <button onclick="init()">Init</button>
+    <button onclick="register()">Register Push</button>
+    <button onclick="allow_push()">Allow Push</button>
     <button onclick="create()">Create User</button>
+    <button onclick="reset()">Reset User</button>
   </body>
 </html>
