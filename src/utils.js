@@ -61,7 +61,7 @@ const is_empty = (obj) => {
 const trigger = async (instance, route, body, method = "POST") => {
     const endpoint = await _get_endpoint(instance, route);
     const req_body = JSON.stringify(body);
-    const verify_token = fyno_constants.api;
+    const verify_token = await get_config(instance.indexDb,'verify_token');
     const integration = fyno_constants.integration;
     try {
         const trigger_res = await fetch(endpoint, {

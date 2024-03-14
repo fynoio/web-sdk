@@ -1,5 +1,6 @@
 import utils from "./utils";
 import { fyno_constants } from "./constants";
+import config from "./config";
 
 class Profile {
     constructor(instance, distinct_id) {
@@ -23,9 +24,10 @@ class Profile {
         if (utils.is_empty(distinct_id)) return;
         let res;
         const old_user_id = await utils.get_config(this.instance.indexDb, "fyno:distinct_id");
-        utils.set_config(this.instance.indexDb, "fyno:last_distinct_id", old_user_id);
-        utils.set_config(this.instance.indexDb, "fyno:distinct_id", distinct_id);
+        await utils.set_config(this.instance.indexDb, "fyno:last_distinct_id", old_user_id);
+        await utils.set_config(this.instance.indexDb, "fyno:distinct_id", distinct_id);
         if (!this.instance.identified) {
+            await this.set_token(distinct_id);
             res = await utils.trigger(this.instance, "create_profile", {
                 distinct_id,
                 name,
@@ -44,6 +46,7 @@ class Profile {
                     );
                 } else {
                     res = await utils.trigger(this.instance,"merge_profile", {}, "PATCH");
+                    await this.set_token(distinct_id)
                     await utils.trigger(
                         this.instance,
                         "update_profile",
@@ -55,7 +58,6 @@ class Profile {
             this.instance.identified = true;
             return res
         }
-        // const { timezone_id, timezone_name } = await utils.get_timezone();
     };
 
     get_identity = () => {
@@ -142,6 +144,19 @@ class Profile {
     get_webpush = () => {
         return WebPush.get_subscription();
     };
+
+    set_token = async (distinct_id) => {
+        try {
+            const {token} = await (await fetch(`${config.api_url}/${config.api_version}/${fyno_constants.wsid}/${distinct_id}/token`)).json();
+            await utils.set_config(this.instance.indexDb, 'verify_token', token)            
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    get_token = async () => {
+        return await utils.get_config(this.instance.indexDb, 'verify_token')
+    }
 
     reset = async (token) => {
         if(token){
