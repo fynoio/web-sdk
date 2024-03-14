@@ -53,6 +53,10 @@ class WebPush {
       }
 
     async showCustomPopup() {
+        if(!this.is_push_available()){
+            console.log("Web push is not available");
+            return;
+        }
         const {
             backgroundColorOverlay = 'rgba(0, 0, 0, 0.5)',
             popupBackgroundColor = 'white',

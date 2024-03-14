@@ -86,7 +86,7 @@ class Fyno {
         if (current_profile !== distinct_id) {
             FynoInstance.identified = true;
             this.profile = await new Profile(FynoInstance, distinct_id);
-            this.profile.identify(distinct_id, name)
+            await this.profile.identify(distinct_id, name)
         } else {
             this.profile = await new Profile(FynoInstance, distinct_id);
         }
