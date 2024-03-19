@@ -143,6 +143,17 @@ const get_config = async (db, key) => {
     return value ? value.field : undefined;
 };
 
+const remove_config = async (db, key) => {
+    try {
+        const tx = db.transaction('config', 'readwrite');
+        const store = tx.objectStore('config');
+        const value = await store.delete(key);
+        await tx.complete;
+    } catch (error) {
+        console.log(error.message);
+    }
+};
+
 export default {
     urlB64ToUint8Array,
     is_empty,
@@ -152,4 +163,5 @@ export default {
     get_timezone,
     set_config,
     get_config,
+    remove_config
 };

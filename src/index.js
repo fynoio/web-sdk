@@ -10,35 +10,29 @@ export var requestTime;
 const FynoInstance = {};
 
 class Fyno {
-    // async init(wsid, token, integration, env = "live") {
-    //     requestTime = new Date();
-    //     fyno_constants.wsid = wsid;
-    //     fyno_constants.api = token;
-    //     fyno_constants.integration = integration;
-    //     config.api_env = env;
-    //     const profile_config = await utils.get_config("fyno:distinct_id");
-    //     if (utils.is_empty(profile_config)) {
-    //         const fyno_uuid = await utils.uuidv5()
-    //         FynoInstance.identified = false;
-    //         this.profile = new Profile(FynoInstance, fyno_uuid);
-    //         let res = await this.profile.identify(fyno_uuid)
-    //         console.log(res);
-    //     } else {
-    //         this.profile = new Profile(FynoInstance, profile_config)
-    //     }
-    //     this.web_push = new WebPush(FynoInstance);
-    // }
-    
-    async init(wsid, token, integration, env = "live", options = {}) {
-
+    async init(wsid, integration, env = "live", options = {}) {
         return new Promise(async (resolve, reject) => {
             try {
                 await this.createStoreInDB();
                 requestTime = new Date();
                 fyno_constants.wsid = wsid;
-                fyno_constants.api = token;
                 fyno_constants.integration = integration;
                 config.api_env = env;
+                if(options.service_worker && options.service_worker!==""){
+                    config.service_worker_file = options.service_worker
+                }
+
+                if(options.sw_scope && options.sw_scope !== ""){
+                    config.sw_scope = options.sw_scope
+                }
+
+                if(options.api_url && options.api_url !== ""){
+                    config.api_url = options.api_url
+                }
+
+                if(options.sw_delay && options.sw_delay!==""){
+                    config.sw_delay = options.sw_delay
+                }
     
                 const profile_config = await utils.get_config(FynoInstance.indexDb, "fyno:distinct_id");
                 if (utils.is_empty(profile_config)) {
@@ -48,17 +42,6 @@ class Fyno {
                     let res = await this.profile.identify(fyno_uuid);
                 } else {
                     this.profile = new Profile(FynoInstance, profile_config);
-                }
-                if(options.service_worker && options.service_worker!==""){
-                    config.service_worker_file = options.service_worker
-                }
-
-                if(options.sw_scope && options.sw_scope !== ""){
-                    config.sw_scope = options.sw_scope
-                }
-
-                if(options.sw_delay && options.sw_delay!==""){
-                    config.sw_delay = options.sw_delay
                 }
 
                 this.web_push = await new WebPush(FynoInstance);
@@ -111,6 +94,29 @@ class Fyno {
         await this.web_push.register_push(vapid);
         return this.profile?.webpush;
     }
-}
+
+    async add_channel(channel, token) {
+        switch(channel){
+            case 'sms':
+                await this.profile.set_sms(token);
+                break;
+            case 'voice':
+                await this.profile.set_voice(token);
+                break;
+            case 'whatsapp':
+                await this.profile.set_whatsapp(token);
+                break;
+            case 'inapp':
+                await this.profile.set_inapp(token);
+                break;
+            case 'email':
+                    await this.profile.set_email(token);
+                    break;
+            default:
+                console.error('Invalid channel');
+                break;
+        }
+    }
+ }
 
 export default new Fyno();

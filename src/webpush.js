@@ -175,7 +175,7 @@ class WebPush {
                 this.subscribe_push(registration);
             })
             .catch((err) => {
-                console.error("Fyno: Error in serviceworker registration", err);
+                console.log("Fyno: Error in serviceworker registration", err);
             });
     };
 

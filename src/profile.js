@@ -34,7 +34,7 @@ class Profile {
             });
         } else {
             if (old_user_id != distinct_id) {
-                if (utils.is_empty(old_user_id)) {
+                if (utils.is_empty(old_user_id) && !utils.is_empty(name)) {
                     res = await utils.trigger(
                         this.instance,
                         "update_profile",
@@ -47,15 +47,19 @@ class Profile {
                 } else {
                     res = await utils.trigger(this.instance,"merge_profile", {}, "PATCH");
                     await this.set_token(distinct_id)
-                    await utils.trigger(
-                        this.instance,
-                        "update_profile",
-                        { distinct_id, name },
-                        "PUT"
-                    );
+                    if(!utils.is_empty(name)){
+                        await utils.trigger(
+                            this.instance,
+                            "update_profile",
+                            { distinct_id, name },
+                            "PUT"
+                        );
+                    }
                 }
             }
             this.instance.identified = true;
+            await utils.remove_config(this.instance, "fyno_push_subscription");
+            await utils.remove_config(this.instance, "fyno_push_permission");
             return res
         }
     };
@@ -124,10 +128,34 @@ class Profile {
         return this.email;
     };
 
+    set_inapp = async (inapp_token) => {
+        if (!inapp_token || utils.is_empty(inapp_token)) {
+            console.error("invalid token received");
+            return;
+        }
+        this.inapp_token = inapp_token;
+        await this.update_channel({
+            inapp: {
+                token: this.inapp_token,
+                status: 1
+            },
+        });
+    };
+
+    get_inapp = () => {
+        return this.inapp_token;
+    };
+
     set_webpush = async (subscription) => {
         if (!subscription || utils.is_empty(subscription)) {
             console.error("invalid push subscription");
         }
+
+        if(await utils.get_config(this.instance.indexDb, "fyno_push_subscription") === JSON.stringify(subscription)){
+            if(await utils.get_config(this.instance.indexDb, "fyno_push_permission") === Notification.permission)
+                return;
+        }
+
         this.webpush = subscription;
         await this.update_channel({
             webpush: [
@@ -139,6 +167,7 @@ class Profile {
             ],
         });
         await utils.set_config(this.instance.indexDb, "fyno_push_subscription",JSON.stringify(subscription));
+        await utils.set_config(this.instance.indexDb, "fyno_push_permission",Notification.permission);
     };
 
     get_webpush = () => {
