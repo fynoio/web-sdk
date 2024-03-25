@@ -2,3 +2,5 @@
 /dist
 /.DS_Store
 /example
+package-lock.json
+yarn.lock

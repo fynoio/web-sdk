@@ -5,7 +5,7 @@ import Profile from "./profile";
 import WebPush from "./webpush";
 import { fyno_constants } from "./constants";
 import customPopupConfig from "./customPopupConfig";
-
+import { detectIncognito } from "detectincognitojs";
 export var requestTime;
 const FynoInstance = {};
 
@@ -13,6 +13,12 @@ class Fyno {
     async init(wsid, integration, env = "live", options = {}) {
         return new Promise(async (resolve, reject) => {
             try {
+                const { isPrivate } = await detectIncognito();
+                if(isPrivate) {
+                    console.error("Not supported in private browsing modes");
+                    reject();
+                    return;
+                }
                 await this.createStoreInDB();
                 requestTime = new Date();
                 fyno_constants.wsid = wsid;
@@ -45,26 +51,36 @@ class Fyno {
                 }
 
                 this.web_push = await new WebPush(FynoInstance);
-                
+                FynoInstance.initialized = true;
                 resolve(this.profile.distinct_id);
             } catch (error) {
-                reject(error);
+                console.error(error);
+                reject();
             }
         });
     }
 
     async createStoreInDB() {
-        FynoInstance.indexDb = await openDB('fyno-websdk', 1, {
-            upgrade(db) {
-              if (!db.objectStoreNames.contains('config')) {
-                db.createObjectStore('config');
-              }
-            },
-          });
+        try {            
+            FynoInstance.indexDb = await openDB('fyno-websdk', 1, {
+                upgrade(db) {
+                  if (!db.objectStoreNames.contains('config')) {
+                    db.createObjectStore('config');
+                  }
+                },
+              });
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
       }
       
 
     async identify(distinct_id, name = "") {
+        if(!FynoInstance.initialized){
+            console.log("Fyno instance not initialized, make sure you have initialized before calling register_push");
+            return;
+        }
         const current_profile = await utils.get_config(FynoInstance.indexDb, "fyno:distinct_id");
         if (current_profile !== distinct_id) {
             FynoInstance.identified = true;
@@ -77,6 +93,7 @@ class Fyno {
     }
 
     async reset() {
+        if( !FynoInstance.initialized ) return;
         let token = await this.web_push.get_current_subscription();
         await this.profile.reset(token);
         FynoInstance.identified = false;
@@ -91,11 +108,16 @@ class Fyno {
     }
 
     async register_push(vapid) {
+        if(!FynoInstance.initialized){
+            console.log("Fyno instance not initialized, make sure you have initialized before calling register_push");
+            return;
+        } 
         await this.web_push.register_push(vapid);
         return this.profile?.webpush;
     }
 
     async add_channel(channel, token) {
+        if(!FynoInstance.initialized) return;
         switch(channel){
             case 'sms':
                 await this.profile.set_sms(token);

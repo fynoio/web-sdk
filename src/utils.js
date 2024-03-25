@@ -136,11 +136,15 @@ const set_config = async (db, key, value) => {
 };
 
 const get_config = async (db, key) => {
-    const tx = db.transaction('config', 'readonly');
-    const store = tx.objectStore('config');
-    const value = await store.get(key);
-    await tx.complete;
-    return value ? value.field : undefined;
+    try {
+        const tx = db.transaction('config', 'readonly');
+        const store = tx.objectStore('config');
+        const value = await store.get(key);
+        await tx.complete;
+        return value ? value.field : undefined;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const remove_config = async (db, key) => {
@@ -150,7 +154,7 @@ const remove_config = async (db, key) => {
         const value = await store.delete(key);
         await tx.complete;
     } catch (error) {
-        console.log(error.message);
+        console.error(error);
     }
 };
 
