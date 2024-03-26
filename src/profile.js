@@ -1,11 +1,13 @@
 import utils from "./utils";
 import { fyno_constants } from "./constants";
 import config from "./config";
+import WebPush from "./webpush";
 
 class Profile {
     constructor(instance, distinct_id) {
         this.instance = instance;
         this.distinct_id = distinct_id;
+        this.webpush = new WebPush(this.instance);
     }
 
     update_channel = async (channel_obj) => {
@@ -23,6 +25,7 @@ class Profile {
         if(!name) name = undefined;
         if (utils.is_empty(distinct_id)) return;
         let res;
+        const current_sub = this.webpush.get_current_subscription();
         const old_user_id = await utils.get_config(this.instance.indexDb, "fyno:distinct_id");
         await utils.set_config(this.instance.indexDb, "fyno:last_distinct_id", old_user_id);
         await utils.set_config(this.instance.indexDb, "fyno:distinct_id", distinct_id);
@@ -41,6 +44,15 @@ class Profile {
                         {
                             distinct_id,
                             name,
+                            channel: current_sub ? {
+                                webpush: [
+                                    {
+                                        token: current_sub,
+                                        integration_id: fyno_constants.integration,
+                                        status: Notification.permission === "granted" ? 1 : 0,
+                                    },
+                                ],
+                            } : undefined
                         },
                         "PUT"
                     );
@@ -58,8 +70,8 @@ class Profile {
                 }
             }
             this.instance.identified = true;
-            await utils.remove_config(this.instance, "fyno_push_subscription");
-            await utils.remove_config(this.instance, "fyno_push_permission");
+            await utils.remove_config(this.instance.indexDb, "fyno_push_subscription");
+            await utils.remove_config(this.instance.indexDb, "fyno_push_permission");
             return res
         }
     };
@@ -155,8 +167,6 @@ class Profile {
             if(await utils.get_config(this.instance.indexDb, "fyno_push_permission") === Notification.permission)
                 return;
         }
-
-        this.webpush = subscription;
         await this.update_channel({
             webpush: [
                 {

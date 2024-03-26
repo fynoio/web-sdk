@@ -180,11 +180,11 @@ class WebPush {
     };
 
     get_subscription = () => {
-        return navigator.serviceWorker.ready
+        navigator.serviceWorker.ready
             .then((registration) => {
                 return registration.pushManager.getSubscription();
             })
-            .then(async (subscription) => {
+            .then((subscription) => {
                 if (!subscription) {
                     return;
                 }
@@ -298,17 +298,12 @@ class WebPush {
     get_current_subscription = async () => {
         const registration = await navigator.serviceWorker.getRegistration();
         if (!registration) return;
-
-        return registration.pushManager
-            .getSubscription()
-            .then(async (subscription) => {
-                if (!subscription) return;
-                return subscription;
-            });
+        const sub = await registration.pushManager.getSubscription();
+        return sub
     };
 
     is_subscribed = async () => {
-        const subscription = await this.get_subscription_without_wait();
+        const subscription = await this.get_current_subscription();
         return !!subscription;
     };
 
