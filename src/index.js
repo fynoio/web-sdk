@@ -113,7 +113,7 @@ class Fyno {
             return;
         } 
         await this.web_push.register_push(vapid);
-        return this.profile?.webpush;
+        return this.web_push.get_current_subscription();
     }
 
     async add_channel(channel, token) {
