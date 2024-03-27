@@ -1,7 +1,7 @@
-import utils from "./utils";
-import { fyno_constants } from "./constants";
-import config from "./config";
-import WebPush from "./webpush";
+import utils from './utils';
+import { fyno_constants } from './constants';
+import config from './config';
+import WebPush from './webpush';
 
 class Profile {
     constructor(instance, distinct_id) {
@@ -13,66 +13,95 @@ class Profile {
     update_channel = async (channel_obj) => {
         return await utils.trigger(
             this.instance,
-            "update_channel",
+            'update_channel',
             {
-                channel: channel_obj,
+                channel: channel_obj
             },
-            "PATCH"
+            'PATCH'
         );
     };
 
     identify = async (distinct_id, name) => {
-        if(!name) name = undefined;
+        if (!name) name = undefined;
         if (utils.is_empty(distinct_id)) return;
         let res;
         const current_sub = this.webpush.get_current_subscription();
-        const old_user_id = await utils.get_config(this.instance.indexDb, "fyno:distinct_id");
-        await utils.set_config(this.instance.indexDb, "fyno:last_distinct_id", old_user_id);
-        await utils.set_config(this.instance.indexDb, "fyno:distinct_id", distinct_id);
+        const old_user_id = await utils.get_config(
+            this.instance.indexDb,
+            'fyno:distinct_id'
+        );
+        await utils.set_config(
+            this.instance.indexDb,
+            'fyno:last_distinct_id',
+            old_user_id
+        );
+        await utils.set_config(
+            this.instance.indexDb,
+            'fyno:distinct_id',
+            distinct_id
+        );
         if (!this.instance.identified) {
             await this.set_token(distinct_id);
-            res = await utils.trigger(this.instance, "create_profile", {
+            res = await utils.trigger(this.instance, 'create_profile', {
                 distinct_id,
-                name,
+                name
             });
         } else {
             if (old_user_id != distinct_id) {
                 if (utils.is_empty(old_user_id) && !utils.is_empty(name)) {
                     res = await utils.trigger(
                         this.instance,
-                        "update_profile",
+                        'update_profile',
                         {
                             distinct_id,
                             name,
-                            channel: current_sub ? {
-                                webpush: [
-                                    {
-                                        token: current_sub,
-                                        integration_id: fyno_constants.integration,
-                                        status: Notification.permission === "granted" ? 1 : 0,
-                                    },
-                                ],
-                            } : undefined
+                            channel: current_sub
+                                ? {
+                                      webpush: [
+                                          {
+                                              token: current_sub,
+                                              integration_id:
+                                                  fyno_constants.integration,
+                                              status:
+                                                  Notification.permission ===
+                                                  'granted'
+                                                      ? 1
+                                                      : 0
+                                          }
+                                      ]
+                                  }
+                                : undefined
                         },
-                        "PUT"
+                        'PUT'
                     );
                 } else {
-                    res = await utils.trigger(this.instance,"merge_profile", {}, "PATCH");
-                    await this.set_token(distinct_id)
-                    if(!utils.is_empty(name)){
+                    res = await utils.trigger(
+                        this.instance,
+                        'merge_profile',
+                        {},
+                        'PATCH'
+                    );
+                    await this.set_token(distinct_id);
+                    if (!utils.is_empty(name)) {
                         await utils.trigger(
                             this.instance,
-                            "update_profile",
+                            'update_profile',
                             { distinct_id, name },
-                            "PUT"
+                            'PUT'
                         );
                     }
                 }
             }
             this.instance.identified = true;
-            await utils.remove_config(this.instance.indexDb, "fyno_push_subscription");
-            await utils.remove_config(this.instance.indexDb, "fyno_push_permission");
-            return res
+            await utils.remove_config(
+                this.instance.indexDb,
+                'fyno_push_subscription'
+            );
+            await utils.remove_config(
+                this.instance.indexDb,
+                'fyno_push_permission'
+            );
+            return res;
         }
     };
 
@@ -82,12 +111,12 @@ class Profile {
 
     set_sms = async (mobile_number) => {
         if (!mobile_number || utils.is_empty(mobile_number)) {
-            console.error("invalid mobile received");
+            console.error('invalid mobile received');
             return;
         }
         this.sms = mobile_number;
         await this.update_channel({
-            sms: mobile_number,
+            sms: mobile_number
         });
     };
 
@@ -97,12 +126,12 @@ class Profile {
 
     set_voice = async (mobile_number) => {
         if (!mobile_number || utils.is_empty(mobile_number)) {
-            console.error("invalid mobile received");
+            console.error('invalid mobile received');
             return;
         }
         this.voice = mobile_number;
         await this.update_channel({
-            voice: mobile_number,
+            voice: mobile_number
         });
     };
 
@@ -112,12 +141,12 @@ class Profile {
 
     set_whatsapp = async (mobile_number) => {
         if (!mobile_number || utils.is_empty(mobile_number)) {
-            console.error("invalid mobile received");
+            console.error('invalid mobile received');
             return;
         }
         this.whatsapp = mobile_number;
         await this.update_channel({
-            whatsapp: mobile_number,
+            whatsapp: mobile_number
         });
     };
 
@@ -127,12 +156,12 @@ class Profile {
 
     set_email = async (email) => {
         if (!email || utils.is_empty(email) || !utils.regex.email.test(email)) {
-            console.error("invalid email received");
+            console.error('invalid email received');
             return;
         }
         this.email = email;
         await this.update_channel({
-            email,
+            email
         });
     };
 
@@ -142,7 +171,7 @@ class Profile {
 
     set_inapp = async (inapp_token) => {
         if (!inapp_token || utils.is_empty(inapp_token)) {
-            console.error("invalid token received");
+            console.error('invalid token received');
             return;
         }
         this.inapp_token = inapp_token;
@@ -150,7 +179,7 @@ class Profile {
             inapp: {
                 token: this.inapp_token,
                 status: 1
-            },
+            }
         });
     };
 
@@ -160,55 +189,82 @@ class Profile {
 
     set_webpush = async (subscription) => {
         if (!subscription || utils.is_empty(subscription)) {
-            console.error("invalid push subscription");
+            console.error('invalid push subscription');
         }
 
-        if(await utils.get_config(this.instance.indexDb, "fyno_push_subscription") === JSON.stringify(subscription)){
-            if(await utils.get_config(this.instance.indexDb, "fyno_push_permission") === Notification.permission)
+        if (
+            (await utils.get_config(
+                this.instance.indexDb,
+                'fyno_push_subscription'
+            )) === JSON.stringify(subscription)
+        ) {
+            if (
+                (await utils.get_config(
+                    this.instance.indexDb,
+                    'fyno_push_permission'
+                )) === Notification.permission
+            )
                 return;
         }
+        this.webpush_subscription = subscription;
         await this.update_channel({
             webpush: [
                 {
                     token: subscription,
                     integration_id: fyno_constants.integration,
-                    status: Notification.permission === "granted" ? 1 : 0,
-                },
-            ],
+                    status: Notification.permission === 'granted' ? 1 : 0
+                }
+            ]
         });
-        await utils.set_config(this.instance.indexDb, "fyno_push_subscription",JSON.stringify(subscription));
-        await utils.set_config(this.instance.indexDb, "fyno_push_permission",Notification.permission);
+        await utils.set_config(
+            this.instance.indexDb,
+            'fyno_push_subscription',
+            JSON.stringify(subscription)
+        );
+        await utils.set_config(
+            this.instance.indexDb,
+            'fyno_push_permission',
+            Notification.permission
+        );
     };
 
     get_webpush = () => {
-        return WebPush.get_subscription();
+        return this.webpush.get_current_subscription();
     };
 
     set_token = async (distinct_id) => {
         try {
-            const {token} = await (await fetch(`${config.api_url}/${config.api_version}/${fyno_constants.wsid}/${distinct_id}/token`)).json();
-            await utils.set_config(this.instance.indexDb, 'verify_token', token)            
+            const { token } = await (
+                await fetch(
+                    `${config.api_url}/${config.api_version}/${fyno_constants.wsid}/${distinct_id}/token`
+                )
+            ).json();
+            await utils.set_config(
+                this.instance.indexDb,
+                'verify_token',
+                token
+            );
         } catch (error) {
             console.log(error);
         }
     };
 
     get_token = async () => {
-        return await utils.get_config(this.instance.indexDb, 'verify_token')
-    }
+        return await utils.get_config(this.instance.indexDb, 'verify_token');
+    };
 
     reset = async (token) => {
-        if(token){
+        if (token) {
             await utils.trigger(
                 this.instance,
-                "delete_channel",
+                'delete_channel',
                 {
-                    webpush: [token],
+                    webpush: [token]
                 },
-                "POST"
+                'POST'
             );
         } else {
-            console.log("No webpush subscription available");
+            console.log('No webpush subscription available');
         }
     };
 }
