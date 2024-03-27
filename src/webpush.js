@@ -179,31 +179,31 @@ class WebPush {
         });
     }
 
-    register_serviceworker = () => {
-        return navigator.serviceWorker
-            .register(config.service_worker_file, {
-                scope: config.sw_scope
-            })
-            .then((registration) => {
-                this.subscribe_push(registration);
-            })
-            .catch((err) => {
-                console.log('Fyno: Error in serviceworker registration', err);
-            });
+    register_serviceworker = async (push) => {
+        try {
+            const registration = await navigator.serviceWorker.register(
+                config.service_worker_file,
+                {
+                    scope: config.sw_scope
+                }
+            );
+            if (push && registration) {
+                await this.subscribe_push(registration);
+            }
+            return registration;
+        } catch (error) {
+            console.log(error.message);
+        }
     };
 
-    get_subscription = () => {
-        return navigator.serviceWorker
-            .getRegistration()
-            .then((registration) => {
-                return registration.pushManager.getSubscription();
-            })
-            .then((subscription) => {
-                if (!subscription) {
-                    return;
-                }
-                return subscription;
-            });
+    get_subscription = async () => {
+        let registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) registration = await register_serviceworker(false);
+        let sub = await registration?.pushManager?.getSubscription();
+        if (!sub) {
+            return;
+        }
+        return sub;
     };
 
     async subscribe_with_delay() {
@@ -231,17 +231,7 @@ class WebPush {
             // If there is no existing subscription or stored subscription,
             // or if the stored subscription is different, subscribe again
             if (JSON.stringify(sub) !== existingSubscription) {
-                const applicationServerKey = utils.urlB64ToUint8Array(
-                    config.vapid_key
-                );
-                const newSubscription =
-                    await registration.pushManager.subscribe({
-                        applicationServerKey,
-                        userVisibleOnly: true
-                    });
-                this.profile.set_webpush(newSubscription);
-            } else {
-                console.log('Valid existing or stored subscription found.');
+                this.profile.set_webpush(existingSubscription);
             }
         } else if (permission === 'denied') {
             console.log('Notification Permission denied.');
@@ -262,11 +252,11 @@ class WebPush {
             const delay = now - requestTime;
             const has_delay = delay >= config.sw_delay;
             if (has_delay) {
-                await this.register_serviceworker();
+                await this.register_serviceworker(true);
             } else {
                 clearTimeout(timer);
                 timer = setTimeout(async () => {
-                    await this.register_serviceworker();
+                    await this.register_serviceworker(true);
                 }, config.sw_delay - delay);
             }
         }
@@ -298,22 +288,18 @@ class WebPush {
         }
     };
 
-    update_subscription() {
-        navigator?.serviceWorker
-            ?.getRegistration()
-            .then((registration) => {
-                return registration.pushManager.getSubscription();
-            })
-            .then((subscription) => {
-                if (!subscription) {
-                    return;
-                }
-                this.profile.set_webpush(subscription);
-            });
+    async update_subscription() {
+        let registration = await navigator?.serviceWorker?.getRegistration();
+        if (!registration) {
+            registration = await this.register_serviceworker(false);
+        }
+
+        const sub = await registration?.pushManager?.getSubscription();
+        if (!sub) return;
+        this.profile.set_webpush(sub);
     }
 
-    register_push = async (vapid) => {
-        config.vapid_key = vapid;
+    register_push = async () => {
         if (this.is_push_available()) {
             await this.subscribe_with_delay();
         } else {
@@ -322,9 +308,15 @@ class WebPush {
     };
 
     get_current_subscription = async () => {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (!registration) return;
-        const sub = await registration.pushManager.getSubscription();
+        if (!config.vapid_key) return;
+        let registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+            registration = await this.register_serviceworker(false);
+        }
+        let sub = await registration?.pushManager?.getSubscription();
+        if (!sub) {
+            return;
+        }
         return sub;
     };
 
@@ -339,6 +331,7 @@ class WebPush {
         navigator.serviceWorker
             .getRegistration()
             .then(async (reg) => {
+                if (!reg) await this.register_serviceworker();
                 await this.subscribe_push(reg);
             })
             .catch((err) => {

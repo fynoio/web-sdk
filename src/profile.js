@@ -7,7 +7,6 @@ class Profile {
     constructor(instance, distinct_id) {
         this.instance = instance;
         this.distinct_id = distinct_id;
-        this.webpush = new WebPush(this.instance);
     }
 
     update_channel = async (channel_obj) => {
@@ -25,7 +24,9 @@ class Profile {
         if (!name) name = undefined;
         if (utils.is_empty(distinct_id)) return;
         let res;
-        const current_sub = this.webpush.get_current_subscription();
+        const current_sub = await new WebPush(
+            this.instance
+        ).get_current_subscription();
         const old_user_id = await utils.get_config(
             this.instance.indexDb,
             'fyno:distinct_id'
@@ -228,8 +229,8 @@ class Profile {
         );
     };
 
-    get_webpush = () => {
-        return this.webpush.get_current_subscription();
+    get_webpush = async () => {
+        return await new WebPush(this.instance).get_current_subscription();
     };
 
     set_token = async (distinct_id) => {
@@ -262,6 +263,14 @@ class Profile {
                     webpush: [token]
                 },
                 'POST'
+            );
+            await utils.remove_config(
+                this.instance.indexDb,
+                'fyno_push_subscription'
+            );
+            await utils.remove_config(
+                this.instance.indexDb,
+                'fyno_push_permission'
             );
         } else {
             console.log('No webpush subscription available');
