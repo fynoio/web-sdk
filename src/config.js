@@ -5,7 +5,7 @@ const config = {
     service_worker_file: "/serviceworker.js",
     sw_delay: 5000,
     api_url: "https://api.fyno.io",
-    api_version: "v1",
+    api_version: "v2",
     api_env: "live",
     event_endpoint: "/event",
     user_endpoint: "/track/profile",

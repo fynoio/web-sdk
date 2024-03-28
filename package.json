@@ -1,6 +1,6 @@
 {
   "name": "@fyno/websdk",
-  "version": "1.1.10",
+  "version": "2.0.5",
   "description": "Fyno Web SDK",
   "repository": {
     "type": "git",
@@ -11,7 +11,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack --env module_type=commonjs --env filename=cjs_bundle.js --watch & webpack --env module_type=window --env filename=cdn_bundle.js --watch",
     "build": "rm -rf dist && webpack --env module_type=commonjs --env filename=cjs_bundle.js  && webpack --env module_type=window --env filename=cdn_bundle.js",
-    "publish_sdk": "npm run build && npm publish"
+    "publish_sdk": "npm run build && npm publish",
+    "dev": "rm -f example/cdn_bundle.js && rm -f example/cjs_bundle.js && mv dist/cdn_bundle.js example/cdn_bundle.js && mv dist/cjs_bundle.js example/cjs_bundle.js",
+    "serve": "cd example && serve"
   },
   "types": "src/index.d.ts",
   "publishConfig": {
@@ -36,6 +38,7 @@
     "webpack-cli": "^5.1.0"
   },
   "dependencies": {
+    "detectincognitojs": "^1.3.5",
     "idb": "^8.0.0"
   }
 }

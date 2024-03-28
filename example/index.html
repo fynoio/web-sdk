@@ -14,24 +14,28 @@
     <title>Usage example for the javascript-sdk-boilerplate</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
     <!-- load file locally if possibleand override the external from github -->
+    <script src="../cdn_bundle.js"></script>
   </head>
-  <body onload="test()">
-    <script src="cdn_bundle.js"></script>
+  <body>
 
     <script>
-      async function test(){
-       await fyno.default.init('WS_ID','API_KEY');
-      // fyno.default.identify("vinod")
-      await fyno.default.web_push.register_push("VAPID_PUBLIC_KEY")
+      async function init(){
+       await fyno.default.init('FYAP71A8502A2IN','edde26b7630eef462b14644e5c8b02235d05e2008da51ef85bceeb8e778998a0','I37210719E7B7', 'test');
+      }
+      async function register(){
+      await fyno.default.web_push.register_push("BAYcqlJTJR3nE76qvfGaMJpDx6D4QQdqIlI9WKvdOlFCK8YcaTqaYf4eXI5MXhPfQYeI10WoxGYwv6FuXslxd44")
       }
       function create(){
-        fyno.default.identify("DISTINCT_ID")
+        fyno.default.identify("vinod")
       }
       function reset(){
         fyno.default.reset()
       }
       function allow_push() {
         fyno.default.web_push.allow_push();
+      }
+      function init_inapp() {
+        
       }
   </script>
     <h1>Hello World</h1>
@@ -42,5 +46,6 @@
     <button onclick="allow_push()">Allow Push</button>
     <button onclick="create()">Create User</button>
     <button onclick="reset()">Reset User</button>
+    <button onclick="init_inapp()">Init Inapp</button>
   </body>
 </html>
