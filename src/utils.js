@@ -92,19 +92,23 @@ const regex = {
 };
 
 const urlB64ToUint8Array = (base64String) => {
-    if (!base64String) return;
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
+    try {
+        if (!base64String) return;
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
 
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
 
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    } catch (error) {
+        console.error(error);
     }
-    return outputArray;
 };
 
 const get_timezone = async () => {
@@ -138,10 +142,14 @@ function _get_cookie(name) {
 }
 
 const set_config = async (db, key, value) => {
-    const tx = db.transaction('config', 'readwrite');
-    const store = tx.objectStore('config');
-    await store.put({ field: value }, key);
-    await tx.complete;
+    try {
+        const tx = db.transaction('config', 'readwrite');
+        const store = tx.objectStore('config');
+        await store.put({ field: value }, key);
+        await tx.complete;
+    } catch (error) {
+        console.error(error);
+    }
 };
 
 const get_config = async (db, key) => {

@@ -15,7 +15,9 @@ class Fyno {
             try {
                 const { isPrivate } = await detectIncognito();
                 if (isPrivate) {
-                    console.error('Not supported in private browsing modes');
+                    console.error(
+                        'Webpush Not supported in private browsing modes'
+                    );
                     reject();
                     return;
                 }
@@ -101,14 +103,13 @@ class Fyno {
 
     async reset() {
         if (!FynoInstance.initialized) return;
-        let token = await this.web_push.get_current_subscription();
+        let token = await this.web_push.get_subscription();
         await this.profile.reset(token);
         FynoInstance.identified = false;
         let fyno_uuid = await utils.uuidv5();
         this.profile = new Profile(FynoInstance, fyno_uuid);
         await this.profile.identify(fyno_uuid);
-        const sub = await this.web_push.get_current_subscription();
-        await this.profile.set_webpush(sub);
+        await this.profile.set_webpush(token);
     }
 
     setCustomPopupConfig(options) {
@@ -127,7 +128,7 @@ class Fyno {
         }
         config.vapid_key = vapid;
         await this.web_push.register_push();
-        return await this.web_push.get_current_subscription();
+        return await this.web_push.get_subscription();
     }
 
     async add_channel(channel, token) {

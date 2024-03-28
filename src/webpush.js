@@ -21,7 +21,29 @@ class WebPush {
         return !!('serviceWorker' in navigator && 'PushManager' in window);
     };
 
-    ask_permissions = async () => await Notification.requestPermission();
+    ask_permissions = async (reg) => {
+        if (!reg) return;
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            if (!config.vapid_key) {
+                console.log('Fyno: No vapid provided to register push');
+                return;
+            }
+            const applicationServerKey = utils.urlB64ToUint8Array(
+                config.vapid_key
+            );
+            const subscription = await reg.pushManager.subscribe({
+                applicationServerKey,
+                userVisibleOnly: true
+            });
+            await this.profile.set_webpush(subscription);
+            await utils.set_config(
+                this.instance.indexDb,
+                'push_status',
+                'allowed'
+            );
+        }
+    };
 
     deleteCookie(cookieName) {
         const now = new Date();
@@ -53,6 +75,12 @@ class WebPush {
     }
 
     async showCustomPopup() {
+        const current_status = await utils.get_config(
+            this.instance.indexDb,
+            'push_status'
+        );
+        if (current_status === 'pending' || current_status === 'allowed')
+            return current_status;
         if (!this.is_push_available()) {
             console.log('Web push is not available');
             return;
@@ -126,13 +154,13 @@ class WebPush {
             allowButton.style.marginRight = '10px';
             allowButton.style.cursor = 'pointer';
             allowButton.addEventListener('click', async () => {
+                overlay.remove();
                 await utils.set_config(
                     this.instance.indexDb,
                     'push_status',
-                    'allowed'
+                    'pending'
                 );
-                overlay.remove();
-                resolve('allow');
+                resolve('allowed');
             });
 
             const denyButton = document.createElement('button');
@@ -143,14 +171,9 @@ class WebPush {
             denyButton.style.padding = '10px 20px';
             denyButton.style.cursor = 'pointer';
             denyButton.addEventListener('click', async () => {
-                await utils.set_config(
-                    this.instance.indexDb,
-                    'push_status',
-                    'denied'
-                );
                 this.deleteCookie('remind_later');
                 overlay.remove();
-                resolve('deny');
+                resolve('denied');
             });
 
             const remindLaterTextElement = document.createElement('div');
@@ -198,10 +221,18 @@ class WebPush {
 
     get_subscription = async () => {
         let registration = await navigator.serviceWorker.getRegistration();
-        if (!registration) registration = await register_serviceworker(false);
+        if (!registration)
+            registration = await this.register_serviceworker(false);
         let sub = await registration?.pushManager?.getSubscription();
         if (!sub) {
-            return;
+            if (
+                (await utils.get_config(
+                    this.instance.indexDb,
+                    'fyno_push_permission'
+                )) === 'allowed' ||
+                Notification.permission === 'granted'
+            )
+                sub = await this.subscribe_push(registration);
         }
         return sub;
     };
@@ -222,6 +253,11 @@ class WebPush {
 
         // If permission is granted, update channel
         if (permission === 'granted') {
+            await utils.set_config(
+                this.instance.indexDb,
+                'push_status',
+                'allowed'
+            );
             console.log('Notification Permission granted');
             const existingSubscription = await this.get_current_subscription();
             const sub = await utils.get_config(
@@ -263,28 +299,26 @@ class WebPush {
     }
 
     subscribe_push = async (reg) => {
-        const userResponse = await this.showCustomPopup();
-        if (userResponse === 'allow') {
-            const permission = await this.ask_permissions();
-            if (permission === 'granted') {
-                const subscription = await this.get_subscription();
-                if (!subscription) {
-                    if (!config.vapid_key) {
-                        console.log('Fyno: No vapid provided to register push');
-                        return;
-                    }
-                    const applicationServerKey = utils.urlB64ToUint8Array(
-                        config.vapid_key
-                    );
-                    const subscription = await reg.pushManager.subscribe({
-                        applicationServerKey,
-                        userVisibleOnly: true
-                    });
-                    await this.profile.set_webpush(subscription);
-                }
+        if (
+            (await utils.get_config(this.instance.indexDb, 'push_status')) !==
+            'allowed'
+        ) {
+            const userResponse = await this.showCustomPopup();
+            if (userResponse === 'allowed') {
+                await this.ask_permissions(reg);
+            } else {
+                console.log(
+                    'User denied custom popup. Do nothing.',
+                    userResponse
+                );
+                await utils.set_config(
+                    this.instance.indexDb,
+                    'push_status',
+                    userResponse
+                );
             }
         } else {
-            console.log('User denied custom popup. Do nothing.');
+            await this.ask_permissions(reg);
         }
     };
 
@@ -295,7 +329,12 @@ class WebPush {
         }
 
         const sub = await registration?.pushManager?.getSubscription();
-        if (!sub) return;
+        if (
+            (await utils.get_config(this.instance.indexDb, 'push_status')) ===
+                'allowed' ||
+            Notification.permission === 'granted'
+        )
+            sub = await this.subscribe_push(registration);
         this.profile.set_webpush(sub);
     }
 
@@ -315,7 +354,14 @@ class WebPush {
         }
         let sub = await registration?.pushManager?.getSubscription();
         if (!sub) {
-            return;
+            if (
+                (await utils.get_config(
+                    this.instance.indexDb,
+                    'push_status'
+                )) === 'allowed' ||
+                Notification.permission === 'granted'
+            )
+                sub = await this.subscribe_push(registration);
         }
         return sub;
     };
@@ -331,7 +377,7 @@ class WebPush {
         navigator.serviceWorker
             .getRegistration()
             .then(async (reg) => {
-                if (!reg) await this.register_serviceworker();
+                if (!reg) reg = await this.register_serviceworker(false);
                 await this.subscribe_push(reg);
             })
             .catch((err) => {

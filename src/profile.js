@@ -24,9 +24,7 @@ class Profile {
         if (!name) name = undefined;
         if (utils.is_empty(distinct_id)) return;
         let res;
-        const current_sub = await new WebPush(
-            this.instance
-        ).get_current_subscription();
+        const current_sub = await new WebPush(this.instance).get_subscription();
         const old_user_id = await utils.get_config(
             this.instance.indexDb,
             'fyno:distinct_id'
@@ -190,7 +188,8 @@ class Profile {
 
     set_webpush = async (subscription) => {
         if (!subscription || utils.is_empty(subscription)) {
-            console.error('invalid push subscription');
+            console.log('invalid push subscription');
+            return;
         }
 
         if (
@@ -230,7 +229,7 @@ class Profile {
     };
 
     get_webpush = async () => {
-        return await new WebPush(this.instance).get_current_subscription();
+        return await new WebPush(this.instance).get_subscription();
     };
 
     set_token = async (distinct_id) => {
